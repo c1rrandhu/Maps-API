@@ -11,16 +11,23 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi('main.ui', self)
-        self.setWindowTitle('MapAPI')
+        self.setWindowTitle('Maps-API')
 
         self.lon.setText('37.977751')
         self.lat.setText('55.757718')
         self.spn.setText('1')
+        self.button.clicked.connect(self.confirm)
+        self.reset_button.clicked.connect(self.reset)
+
+    def reset(self):
+        self.lon.clear()
+        self.lat.clear()
+        self.spn.clear()
+
+    def confirm(self):
         self.map_zoom = int(self.spn.text())
         self.ll = [float(self.lon.text()), float(self.lat.text())]
-
-        # self.setMap()
-        self.button.clicked.connect(self.setMap)
+        self.setMap()
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -40,8 +47,6 @@ class MainWindow(QMainWindow):
         self.setMap()
 
     def setMap(self):
-        # self.map_zoom = int(self.spn.text())
-        # self.ll = [float(self.lon.text()), float(self.lat.text())]
         longitude = str(self.ll[0])
         latitude = str(self.ll[1])
 
