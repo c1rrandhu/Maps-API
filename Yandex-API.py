@@ -1,10 +1,10 @@
 import os
 import sys
-from PyQt5.QtGui import QPixmap
+import requests
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
-import requests
 
 
 class MainWindow(QMainWindow):
@@ -31,10 +31,10 @@ class MainWindow(QMainWindow):
     def set_precised_map(self):
         geocoder = (f'http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&'
                     f'geocode={self.address_input.text()}&format=json')
-        response = requests.get(geocoder).json()["response"]["GeoObjectCollection"]["featureMember"][0]
-        coords = response['GeoObject']["Point"]["pos"].split()
+        response = requests.get(geocoder).json()['response']['GeoObjectCollection']['featureMember'][0]
+        coords = response['GeoObject']['Point']['pos'].split()
 
-        point = ",".join([str(float(coords[0])), str(float(coords[1]))])
+        point = ','.join([str(float(coords[0])), str(float(coords[1]))])
         params = {'ll': point,
                   'l': self.l,
                   'z': 15,
@@ -44,8 +44,8 @@ class MainWindow(QMainWindow):
         with open('tmp.png', mode='wb') as tmp:
             tmp.write(response.content)
 
-        self.mapwindow = MapWindow(point, 15, flag=True)
-        self.mapwindow.show()
+        self.map_window = MapWindow(point, 15, flag=True)
+        self.map_window.show()
 
     def setMap(self):
         coords = ",".join([str(float(self.lon.text())), str(float(self.lat.text()))])
@@ -58,8 +58,8 @@ class MainWindow(QMainWindow):
         with open('tmp.png', mode='wb') as tmp:
             tmp.write(response.content)
 
-        self.mapwindow = MapWindow(coords, spn)
-        self.mapwindow.show()
+        self.map_window = MapWindow(coords, spn)
+        self.map_window.show()
 
 
 class MapWindow(QMainWindow):
@@ -76,6 +76,11 @@ class MapWindow(QMainWindow):
         pixmap.load('tmp.png')
         self.map_lbl.setPixmap(pixmap)
         os.remove('tmp.png')
+
+        self.reset_btn.clicked.connect(self.reset_coord)
+
+    def reset_coord(self):
+        self.close()
 
     def keyPressEvent(self, event):
         key = event.key()
@@ -105,7 +110,7 @@ class MapWindow(QMainWindow):
             flag = ','.join(map(str, self.init_ll)) + ',flag'
         else:
             flag = ''
-        params = {'ll': ",".join([str(float(self.ll[0])), str(float(self.ll[1]))]),
+        params = {'ll': ','.join([str(float(self.ll[0])), str(float(self.ll[1]))]),
                   'l': self.l,
                   'z': int(self.map_zoom),
                   'pt': flag}
