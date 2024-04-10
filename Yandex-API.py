@@ -31,8 +31,8 @@ class MainWindow(QMainWindow):
     def set_precised_map(self):
         geocoder = (f'http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&'
                     f'geocode={self.address_input.text()}&format=json')
-        response = requests.get(geocoder).json()['response']['GeoObjectCollection']['featureMember'][0]
-        coords = response['GeoObject']['Point']['pos'].split()
+        toponym = requests.get(geocoder).json()['response']['GeoObjectCollection']['featureMember'][0]
+        coords = toponym['GeoObject']['Point']['pos'].split()
 
         point = ','.join([str(float(coords[0])), str(float(coords[1]))])
         params = {'ll': point,
@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         with open('tmp.png', mode='wb') as tmp:
             tmp.write(response.content)
 
-        self.map_window = MapWindow(point, 15, flag=True)
+        self.map_window = MapWindow(point, 15, response=toponym, flag=True)
         self.map_window.show()
 
     def setMap(self):
@@ -58,12 +58,16 @@ class MainWindow(QMainWindow):
         with open('tmp.png', mode='wb') as tmp:
             tmp.write(response.content)
 
-        self.map_window = MapWindow(coords, spn)
+        geocoder = (f'http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&'
+                    f'geocode={coords}&format=json')
+        toponym = requests.get(geocoder).json()['response']['GeoObjectCollection']['featureMember'][0]
+
+        self.map_window = MapWindow(coords, spn, response=toponym)
         self.map_window.show()
 
 
 class MapWindow(QMainWindow):
-    def __init__(self, coords, spn, flag=False):
+    def __init__(self, coords, spn, response=None, flag=False):
         super().__init__()
         uic.loadUi('map.ui', self)
         self.ll = list(map(float, coords.split(',')))
@@ -71,11 +75,14 @@ class MapWindow(QMainWindow):
         self.l = 'map'
         self.map_zoom = spn
         self.flag = flag
+        self.response = response['GeoObject']['metaDataProperty']['GeocoderMetaData']['text']
 
         pixmap = QPixmap()
         pixmap.load('tmp.png')
         self.map_lbl.setPixmap(pixmap)
         os.remove('tmp.png')
+
+        self.full_address.setText(self.response)
 
         self.reset_btn.clicked.connect(self.reset_coord)
 
