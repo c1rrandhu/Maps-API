@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
         self.lon.setText('37.977751')
         self.lat.setText('55.757718')
         self.spn.setText('15')
-        self.address_input.setText('г. Москва, ул. Дружбы, 10/32')
+        self.address_input.setText('г. Москва, ул. Барклая, 5А')
 
         self.l = 'map'
         self.button.clicked.connect(self.confirm_1)
