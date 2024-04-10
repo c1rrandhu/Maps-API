@@ -1,10 +1,10 @@
+import os
 import sys
 from PyQt5.QtGui import QPixmap
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import requests
-import os
 
 
 class MainWindow(QMainWindow):
@@ -16,36 +16,61 @@ class MainWindow(QMainWindow):
         self.lon.setText('37.977751')
         self.lat.setText('55.757718')
         self.spn.setText('15')
+        self.address_input.setText('г. Москва, ул. Дружбы, 10/32')
 
         self.l = 'map'
-        self.button.clicked.connect(self.confirm)
+        self.button.clicked.connect(self.confirm_1)
+        self.address_btn.clicked.connect(self.confirm_2)
 
-    def confirm(self):
-        # self.map_zoom = int(self.spn.text())
-        # self.ll = [float(self.lon.text()), float(self.lat.text())]
+    def confirm_1(self):
         self.setMap()
 
-    def setMap(self):
-        params = {'ll': ",".join([str(float(self.lon.text())), str(float(self.lat.text()))]),
+    def confirm_2(self):
+        self.set_precised_map()
+
+    def set_precised_map(self):
+        geocoder = (f'http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&'
+                    f'geocode={self.address_input.text()}&format=json')
+        response = requests.get(geocoder).json()["response"]["GeoObjectCollection"]["featureMember"][0]
+        coords = response['GeoObject']["Point"]["pos"].split()
+
+        point = ",".join([str(float(coords[0])), str(float(coords[1]))])
+        params = {'ll': point,
                   'l': self.l,
-                  'z': int(self.spn.text())}
+                  'z': 15,
+                  'pt': point + ',flag'}
         response = requests.get(f'http://static-maps.yandex.ru/1.x/', params=params)
 
         with open('tmp.png', mode='wb') as tmp:
             tmp.write(response.content)
 
-        self.mapwindow = MapWindow()
+        self.mapwindow = MapWindow(point, 15, flag=True)
+        self.mapwindow.show()
+
+    def setMap(self):
+        coords = ",".join([str(float(self.lon.text())), str(float(self.lat.text()))])
+        spn = int(self.spn.text())
+        params = {'ll': coords,
+                  'l': self.l,
+                  'z': spn}
+        response = requests.get(f'http://static-maps.yandex.ru/1.x/', params=params)
+
+        with open('tmp.png', mode='wb') as tmp:
+            tmp.write(response.content)
+
+        self.mapwindow = MapWindow(coords, spn)
         self.mapwindow.show()
 
 
 class MapWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, coords, spn, flag=False):
         super().__init__()
         uic.loadUi('map.ui', self)
-        self.temp = MainWindow()
-        self.ll = [float(self.temp.lon.text()), float(self.temp.lat.text())]
+        self.ll = list(map(float, coords.split(',')))
+        self.init_ll = self.ll.copy()
         self.l = 'map'
-        self.map_zoom = int(self.temp.spn.text())
+        self.map_zoom = spn
+        self.flag = flag
 
         pixmap = QPixmap()
         pixmap.load('tmp.png')
@@ -76,9 +101,14 @@ class MapWindow(QMainWindow):
         self.change()
 
     def change(self):
+        if self.flag:
+            flag = ','.join(map(str, self.init_ll)) + ',flag'
+        else:
+            flag = ''
         params = {'ll': ",".join([str(float(self.ll[0])), str(float(self.ll[1]))]),
                   'l': self.l,
-                  'z': int(self.map_zoom)}
+                  'z': int(self.map_zoom),
+                  'pt': flag}
         response = requests.get(f'http://static-maps.yandex.ru/1.x/', params=params)
 
         with open('tmp.png', mode='wb') as tmp:
