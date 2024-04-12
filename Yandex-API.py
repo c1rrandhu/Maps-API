@@ -75,14 +75,17 @@ class MapWindow(QMainWindow):
         self.l = 'map'
         self.map_zoom = spn
         self.flag = flag
-        self.response = response['GeoObject']['metaDataProperty']['GeocoderMetaData']['text']
+        self.response = response['GeoObject']['metaDataProperty']['GeocoderMetaData']
+        self.address = self.response['text']
+        self.postal_code = self.response['Address']['postal_code']
 
         pixmap = QPixmap()
         pixmap.load('tmp.png')
         self.map_lbl.setPixmap(pixmap)
         os.remove('tmp.png')
 
-        self.full_address.setText(self.response)
+        self.full_address.setText(self.address)
+        self.postal_code_label.setText('Почтовый индекс: ' + self.postal_code)
 
         self.reset_btn.clicked.connect(self.reset_coord)
 
@@ -96,6 +99,11 @@ class MapWindow(QMainWindow):
             self.map_zoom += 1
         elif (event.key() == Qt.Key_Minus) and QApplication.keyboardModifiers() == Qt.AltModifier and self.map_zoom > 0:
             self.map_zoom -= 1
+        elif key == Qt.Key_C:
+            if not self.postal_code_label.text():
+                self.postal_code_label.setText('Почтовый индекс: ' + self.postal_code)
+            else:
+                self.postal_code_label.clear()
         elif key == Qt.Key_Left:
             self.ll[0] -= 0.001 * self.map_zoom
         elif key == Qt.Key_Right:
