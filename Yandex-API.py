@@ -125,11 +125,18 @@ class MapWindow(QMainWindow):
             flag = ','.join(map(str, self.init_ll)) + ',flag'
         else:
             flag = ''
-        params = {'ll': ','.join([str(float(self.ll[0])), str(float(self.ll[1]))]),
+        coords = ','.join([str(float(self.ll[0])), str(float(self.ll[1]))])
+        params = {'ll': coords,
                   'l': self.l,
                   'z': int(self.map_zoom),
                   'pt': flag}
         response = requests.get(f'http://static-maps.yandex.ru/1.x/', params=params)
+        geocoder = (f'http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&'
+                    f'geocode={coords}&format=json')
+        toponym = requests.get(geocoder).json()['response']['GeoObjectCollection']['featureMember'][0]
+        address = toponym['GeoObject']['metaDataProperty']['GeocoderMetaData']['text']
+        self.full_address.setText(address)
+        self.postal_code_label.clear()
 
         with open('tmp.png', mode='wb') as tmp:
             tmp.write(response.content)
